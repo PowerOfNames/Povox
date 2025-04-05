@@ -185,6 +185,8 @@ namespace Povox {
 		m_SwapchainFrame->WaitSemaphores.clear();
 		m_SwapchainFrame->WaitSemaphores.push_back(GetCurrentFrame().Semaphores.PresentSemaphore);
 		m_SwapchainFrame->RenderSemaphore = GetCurrentFrame().Semaphores.RenderSemaphore;
+
+		return true;
 	}
 
 	bool VulkanRenderer::PrepareComputeFrame()

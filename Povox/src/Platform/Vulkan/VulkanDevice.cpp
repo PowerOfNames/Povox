@@ -92,11 +92,11 @@ namespace Povox {
 		else
 		{
 			createInfo.enabledLayerCount = 0;
-			createInfo.ppEnabledExtensionNames = nullptr;
+			createInfo.ppEnabledLayerNames = nullptr;
 		}
 		PX_CORE_VK_ASSERT(vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device), VK_SUCCESS, "Failed to create logical device!");
-
 		
+
 		//TODO: Maybe get rid of the present queue altogether -> just query for presentSupport and get one of them handles instead
 		vkGetDeviceQueue(m_Device, m_QueueFamilies.GraphicsFamilyIndex, 0, &m_QueueFamilies.Queues.GraphicsQueue);
 		vkGetDeviceQueue(m_Device, m_QueueFamilies.PresentFamilyIndex, 0, &m_QueueFamilies.Queues.PresentQueue);

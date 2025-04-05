@@ -22,7 +22,7 @@ namespace Povox {
 		m_WindowHandle = windowHandle;
 
 
-		//TODO: Potetialy move somewhere else BUT window handle is needed...
+		//TODO: Potentially move somewhere else BUT window handle is needed...
 		PX_CORE_VK_ASSERT(glfwCreateWindowSurface(VulkanContext::GetInstance(), m_WindowHandle, nullptr, &s_Surface), VK_SUCCESS, "Failed to create window surface!");
 		PX_CORE_INFO("VulkanSurface created.");
 		

@@ -14,7 +14,7 @@
 #ifdef PX_ENABLE_VK_ASSERT
 	#define	PX_CORE_VK_ASSERT(x, y, ...) {if(!(x == y)) {PX_CORE_ERROR("Assertion fails: '{0}' \n", __VA_ARGS__); __debugbreak(); } }
 #else
-	#define	PX_CORE_VK_ASSERT(x, y, ...) { x; }
+	#define	PX_CORE_VK_ASSERT(x, y, ...) x;
 #endif
 
 
