@@ -16,8 +16,11 @@ namespace Povox {
 
 		// TODO: Instead of taking a name and a path, just take in a name and pass the path upon ShaderLib creation inside the RendererBackend, pointing to root/.../assets/shaders/
 		//Renderer::GetShaderLibrary()->Add("TextureShader", Shader::Create("assets/shaders/Texture.glsl"));
-		Renderer::GetShaderManager()->Add("Renderer2D_Quad", Shader::Create(std::filesystem::path("assets/shaders/Renderer2D_Quad.glsl")));
-		Renderer::GetShaderManager()->Add("Renderer2D_FullscreenQuad", Shader::Create(std::filesystem::path("assets/shaders/Renderer2D_FullscreenQuad.glsl")));
+		//Renderer::GetShaderManager()->Add("Renderer2D_Quad", Shader::Create(std::filesystem::path("assets/shaders/Renderer2D_Quad.glsl")));
+		//Renderer::GetShaderManager()->Add("Renderer2D_FullscreenQuad", Shader::Create(std::filesystem::path("assets/shaders/Renderer2D_FullscreenQuad.glsl")));
+	
+		m_QuadShaderHandle = Povox::Renderer::GetShaderManager()->Load("Renderer2D_Quad.glsl");
+		m_FullscreenQuadShaderHandle = Povox::Renderer::GetShaderManager()->Load("Renderer2D_FullscreenQuad.glsl");
 	}
 
 	bool Renderer2D::Init()
@@ -51,6 +54,61 @@ namespace Povox {
 			"ObjectDataSSBO"
 			);
 
+		uint32_t maxFrames = Renderer::GetSpecification().MaxFramesInFlight;
+
+
+		BufferSpecification vertexBufferSpecs{};
+		vertexBufferSpecs.Usage = BufferUsage::VERTEX_BUFFER;
+		vertexBufferSpecs.MemUsage = MemoryUtils::MemoryUsage::GPU_ONLY;
+		vertexBufferSpecs.ElementCount = m_Specification.MaxVertices;
+		vertexBufferSpecs.Size = sizeof(QuadVertex) * m_Specification.MaxVertices;
+		vertexBufferSpecs.ElementSize = sizeof(QuadVertex);
+
+		m_QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
+		m_QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
+		m_QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
+		m_QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
+
+
+
+		uint32_t* quadIndices = new uint32_t[m_Specification.MaxIndices];
+		uint32_t offset = 0;
+		for (uint32_t index = 0; index < m_Specification.MaxIndices; index += 6)
+		{
+			quadIndices[index + 0] = offset + 0;
+			quadIndices[index + 1] = offset + 1;
+			quadIndices[index + 2] = offset + 2;
+
+			quadIndices[index + 3] = offset + 2;
+			quadIndices[index + 4] = offset + 3;
+			quadIndices[index + 5] = offset + 0;
+
+			offset += 4;
+		}
+		BufferSpecification indexBufferSpecs{};
+		indexBufferSpecs.Usage = BufferUsage::INDEX_BUFFER_32;
+		indexBufferSpecs.MemUsage = MemoryUtils::MemoryUsage::GPU_ONLY;
+		indexBufferSpecs.ElementCount = m_Specification.MaxIndices;
+		indexBufferSpecs.Size = sizeof(uint32_t) * m_Specification.MaxIndices;
+
+
+		uint32_t maxFrames = Renderer::GetSpecification().MaxFramesInFlight;
+		m_QuadVertexBuffers.resize(maxFrames);
+		m_QuadVertexBufferBases.resize(maxFrames);
+		m_QuadIndexBuffers.resize(maxFrames);
+		for (uint32_t i = 0; i < maxFrames; i++)
+		{
+			// Batch
+			vertexBufferSpecs.DebugName = "Renderer2D Batch Vertexbuffer Frame: " + std::to_string(i);
+			m_QuadVertexBuffers[i] = Buffer::Create(vertexBufferSpecs);
+			m_QuadVertexBufferBases[i] = new QuadVertex[m_Specification.MaxVertices];
+
+			indexBufferSpecs.DebugName = "Renderer2D Batch Indices Frame: " + std::to_string(i);
+			m_QuadIndexBuffers[i] = Buffer::Create(indexBufferSpecs);
+			m_QuadIndexBuffers[i]->SetData(quadIndices, sizeof(uint32_t) * m_Specification.MaxIndices);
+		}
+		delete[] quadIndices;
+
 		//Quads
 		{
 			FramebufferSpecification framebufferSpecs{};
@@ -65,7 +123,7 @@ namespace Povox {
 			pipelineSpecs.TargetFramebuffer = m_QuadFramebuffer;
 			pipelineSpecs.DynamicViewAndScissors = true;
 			pipelineSpecs.Culling = PipelineUtils::CullMode::BACK;
-			pipelineSpecs.Shader = Renderer::GetShaderManager()->Get("Renderer2D_Quad");
+			pipelineSpecs.Shader = Renderer::GetShaderManager()->Get(m_QuadShaderHandle);
 			pipelineSpecs.VertexInputLayout = {
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float4, "a_Color" },
@@ -87,7 +145,7 @@ namespace Povox {
 			m_QuadPipeline->PrintShaderLayout();
 		
 		// Fullscreen		
-			pipelineSpecs.Shader = Renderer::GetShaderManager()->Get("Renderer2D_FullscreenQuad");
+			pipelineSpecs.Shader = Renderer::GetShaderManager()->Get(m_FullscreenQuadShaderHandle);
 			m_FullscreenQuadPipeline = Pipeline::Create(pipelineSpecs);
 			renderpassSpecs.Pipeline = m_FullscreenQuadPipeline;
 			m_FullscreenQuadRenderpass = RenderPass::Create(renderpassSpecs);
@@ -100,56 +158,7 @@ namespace Povox {
 			m_FullscreenQuadPipeline->PrintShaderLayout();
 		}
 
-		BufferSpecification vertexBufferSpecs{};
-		vertexBufferSpecs.Usage = BufferUsage::VERTEX_BUFFER;
-		vertexBufferSpecs.MemUsage = MemoryUtils::MemoryUsage::GPU_ONLY;
-		vertexBufferSpecs.ElementCount = m_Specification.MaxVertices;
-		vertexBufferSpecs.Size = sizeof(QuadVertex) * m_Specification.MaxVertices;
-
-		m_QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
-		m_QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
-		m_QuadVertexPositions[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
-		m_QuadVertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
-
 		
-
-		uint32_t* quadIndices = new uint32_t[m_Specification.MaxIndices];
-		uint32_t offset = 0;
-		for (uint32_t index = 0; index < m_Specification.MaxIndices; index += 6)
-		{
-			quadIndices[index + 0] = offset + 0;
-			quadIndices[index + 1] = offset + 1;
-			quadIndices[index + 2] = offset + 2;
-
-			quadIndices[index + 3] = offset + 2;
-			quadIndices[index + 4] = offset + 3;
-			quadIndices[index + 5] = offset + 0;
-
-			offset += 4;
-		}
-		BufferSpecification indexBufferSpecs{};
-		indexBufferSpecs.Usage = BufferUsage::INDEX_BUFFER_32;
-		indexBufferSpecs.MemUsage = MemoryUtils::MemoryUsage::GPU_ONLY;
-		indexBufferSpecs.ElementCount = m_Specification.MaxIndices;
-		indexBufferSpecs.Size = sizeof(uint32_t) * m_Specification.MaxIndices;
-		
-
-		uint32_t maxFrames = Renderer::GetSpecification().MaxFramesInFlight;
-		m_QuadVertexBuffers.resize(maxFrames);
-		m_QuadVertexBufferBases.resize(maxFrames);
-		m_QuadIndexBuffers.resize(maxFrames);
-		for (uint32_t i = 0; i < maxFrames; i++)
-		{
-			// Batch
-			vertexBufferSpecs.DebugName = "Renderer2D Batch Vertexbuffer Frame: " + std::to_string(i);
-			m_QuadVertexBuffers[i] = Buffer::Create(vertexBufferSpecs);
-			m_QuadVertexBufferBases[i] = new QuadVertex[m_Specification.MaxVertices];
-
-			indexBufferSpecs.DebugName = "Renderer2D Batch Indices Frame: " + std::to_string(i);
-			m_QuadIndexBuffers[i] = Buffer::Create(indexBufferSpecs);
-			m_QuadIndexBuffers[i]->SetData(quadIndices, sizeof(uint32_t) * m_Specification.MaxIndices);
-		}
-		delete[] quadIndices;
 		m_QuadMaterial = Material::Create(Renderer::GetShaderManager()->Get("Renderer2D_Quad"), "Quad");
 		m_FullscreenQuadMaterial = Material::Create(Renderer::GetShaderManager()->Get("Renderer2D_FullscreenQuad"), "FullscreenQuad");
 

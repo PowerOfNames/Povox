@@ -1,4 +1,5 @@
--- Implement the solution_items command for solution-scope files //copied from chernos Hazel engine - no idea what it does though
+-- Implement the solution_items command for solution-scope files //copied from chernos Hazel engine. It enables visual studio to show the defined items in the Solution
+-- explorer (e.g. the .lua files, git ignore etc)
 require('vstudio')
 
 premake.api.register {
@@ -9,7 +10,7 @@ premake.api.register {
 
 premake.override(premake.vstudio.sln2005, "projects", function(base, wks)
 	if wks.solution_items and #wks.solution_items > 0 then
-		local solution_folder_GUID = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}" -- See https://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
+		local solution_folder_GUID = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}" -- See https://github.com/JamesW75/visual-studio-project-type-guid
 		premake.push("Project(\"" .. solution_folder_GUID .. "\") = \"Solution Items\", \"Solution Items\", \"{" .. os.uuid("Solution Items:" .. wks.name) .. "}\"")
 		premake.push("ProjectSection(SolutionItems) = preProject")
 

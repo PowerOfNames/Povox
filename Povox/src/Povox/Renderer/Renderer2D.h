@@ -121,6 +121,7 @@ namespace Povox {
 
 		// 2D Renderpasses
 		// Quads
+		Povox::ShaderHandle m_QuadShaderHandle;
 		Ref<RenderPass> m_QuadRenderpass = nullptr;
 		Ref<Framebuffer> m_QuadFramebuffer = nullptr;
 		Ref<Pipeline> m_QuadPipeline = nullptr;
@@ -136,6 +137,7 @@ namespace Povox {
 		glm::vec4 m_QuadVertexPositions[4];
 
 		// FullscreenQuad
+		Povox::ShaderHandle m_FullscreenQuadShaderHandle;
 		Ref<RenderPass> m_FullscreenQuadRenderpass = nullptr;
 		Ref<Pipeline> m_FullscreenQuadPipeline = nullptr;
 
