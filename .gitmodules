@@ -4,6 +4,7 @@
 [submodule "Povox/vendor/GLFW"]
 	path = Povox/vendor/GLFW
 	url = https://github.com/PowerOfNames/glfw
+	branch = Povox
 [submodule "Povox/vendor/ImGui"]
 	path = Povox/vendor/ImGui
 	url = https://github.com/PowerOfNames/imgui
